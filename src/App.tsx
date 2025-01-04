@@ -191,8 +191,8 @@ function App() {
               </div>
             </div>
 
-            {/* Data Panel */}
-            <div className="w-full lg:w-96">
+            {/* Data Panel - Only show on desktop */}
+            <div className="hidden lg:block w-96">
               <div className="sticky top-4">
                 <DataPanel
                   date={calendarState.selectedDate}
