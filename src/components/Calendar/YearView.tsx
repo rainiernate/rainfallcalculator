@@ -35,25 +35,25 @@ const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: Year
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
       {months.map((month, index) => (
-        <div key={format(month.date, 'M')} className="space-y-4">
+        <div key={format(month.date, 'M')} className="space-y-3 sm:space-y-4">
           <button
-            className="w-full flex justify-between items-baseline p-3 rounded-xl hover:bg-gray-50"
+            className="w-full flex justify-between items-baseline p-2 sm:p-3 rounded-xl hover:bg-gray-50"
             onClick={() => handleMonthClick(index)}
           >
-            <h3 className="text-xl font-bold text-gray-700">{format(month.date, 'MMMM')}</h3>
-            <div className="text-lg font-medium text-gray-600">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-700">{format(month.date, 'MMMM')}</h3>
+            <div className="text-base sm:text-lg font-medium text-gray-600">
               {convertUnit(month.total, 'mm', unit).toFixed(1)}{unit}
             </div>
           </button>
 
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div
                 key={day}
-                className="text-center text-sm font-medium text-gray-500"
+                className="text-center text-xs sm:text-sm font-medium text-gray-500"
                 aria-label={day}
                 role="columnheader"
               >

@@ -105,13 +105,13 @@ function App() {
     <div className="min-h-screen w-full bg-gray-50">
       {/* Header */}
       <header className="w-full bg-white border-b border-gray-200">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full px-3 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">Rainfall Calendar</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Rainfall Calendar</h1>
             <div className="flex items-center gap-4">
               <button
                 onClick={handleUnitToggle}
-                className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700"
+                className="px-2 sm:px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700"
               >
                 {calendarState.unit.toUpperCase()}
               </button>
@@ -121,14 +121,14 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="w-full flex flex-col lg:flex-row gap-8">
+      <main className="w-full py-4 sm:py-8">
+        <div className="w-full px-3 sm:px-6 lg:px-8">
+          <div className="w-full flex flex-col lg:flex-row gap-4 sm:gap-8">
             {/* Calendar Section */}
             <div className="w-full lg:flex-1 min-w-0">
-              <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
                 {/* View Controls */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => calendarState.viewLevel === 'year' ? handleYearChange(-1) : handleMonthChange(-1)}
@@ -136,7 +136,7 @@ function App() {
                     >
                       ←
                     </button>
-                    <h2 className="text-xl font-medium">
+                    <h2 className="text-lg sm:text-xl font-medium">
                       {calendarState.viewLevel === 'year' 
                         ? calendarState.selectedDate.getFullYear()
                         : format(calendarState.selectedDate, 'MMMM yyyy')}
@@ -193,7 +193,7 @@ function App() {
 
             {/* Data Panel */}
             <div className="w-full lg:w-96">
-              <div className="sticky top-8">
+              <div className="sticky top-4">
                 <DataPanel
                   date={calendarState.selectedDate}
                   data={rainfallData}
