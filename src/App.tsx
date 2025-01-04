@@ -3,8 +3,7 @@ import { format, addMonths, subMonths } from 'date-fns';
 import { CalendarState } from './types';
 import DataPanel from './components/DataPanel';
 import { fetchRainfallData } from './services/noaaApi';
-import YearView from './components/Calendar/YearView';
-import MonthView from './components/Calendar/MonthView';
+import Calendar from './components/Calendar';
 
 function App() {
   const [calendarState, setCalendarState] = useState<CalendarState>({
@@ -173,21 +172,14 @@ function App() {
                 </div>
 
                 {/* Calendar View */}
-                {calendarState.viewLevel === 'year' ? (
-                  <YearView
-                    selectedDate={calendarState.selectedDate}
-                    onDateSelect={handleDateSelect}
-                    data={rainfallData}
-                    unit={calendarState.unit}
-                  />
-                ) : (
-                  <MonthView
-                    selectedDate={calendarState.selectedDate}
-                    onDateSelect={handleDateSelect}
-                    data={rainfallData}
-                    unit={calendarState.unit}
-                  />
-                )}
+                <Calendar
+                  viewLevel={calendarState.viewLevel}
+                  selectedDate={calendarState.selectedDate}
+                  unit={calendarState.unit}
+                  onDateSelect={handleDateSelect}
+                  onViewChange={handleViewChange}
+                  data={rainfallData}
+                />
               </div>
             </div>
 

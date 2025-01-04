@@ -66,11 +66,11 @@ const MonthView = ({ data, selectedDate, unit, onDateSelect }: MonthViewProps) =
                 className="aspect-square rounded-lg sm:rounded-xl flex flex-col items-center justify-start p-1 sm:p-2 md:p-4 transition-shadow hover:shadow-lg"
                 style={{ backgroundColor: color }}
               >
-                <span className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-bold">
+                <span className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-normal text-gray-700">
                   {format(day, 'd')}
                 </span>
                 {amount > 0 && window.innerWidth >= 640 && (
-                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium mt-1">
+                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium mt-1 text-gray-600">
                     {convertUnit(amount, 'mm', unit).toFixed(1)}
                   </span>
                 )}

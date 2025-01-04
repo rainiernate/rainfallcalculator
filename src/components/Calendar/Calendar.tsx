@@ -6,7 +6,15 @@ import YearView from './YearView';
 import MonthView from './MonthView';
 import InfoPanel from '../InfoPanel/InfoPanel';
 
-const Calendar = ({ viewLevel, selectedDate, unit, onDateSelect }: CalendarViewProps) => {
+interface CalendarProps {
+  viewLevel: 'year' | 'month';
+  selectedDate: Date;
+  unit: string;
+  onDateSelect: (date: Date) => void;
+  onViewChange: (view: 'year' | 'month') => void;
+}
+
+const Calendar = ({ viewLevel, selectedDate, unit, onDateSelect, onViewChange }: CalendarProps) => {
   const [rainfallData, setRainfallData] = useState<RainfallData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +87,7 @@ const Calendar = ({ viewLevel, selectedDate, unit, onDateSelect }: CalendarViewP
               selectedDate={selectedDate}
               unit={unit}
               onDateSelect={handleDateSelect}
+              onViewChange={onViewChange}
             />
           ) : (
             <MonthView

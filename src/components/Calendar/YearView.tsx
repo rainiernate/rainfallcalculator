@@ -1,6 +1,8 @@
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format } from 'date-fns';
+import { useState } from 'react';
 import { getColorForAmount } from '../../utils/colors';
 import { convertUnit } from '../../utils/units';
+import MobileDataDialog from '../DataPanel/MobileDataDialog';
 
 interface YearViewProps {
   data: { [key: string]: number };
@@ -11,36 +13,45 @@ interface YearViewProps {
 }
 
 const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: YearViewProps) => {
+  const [showMobileDialog, setShowMobileDialog] = useState(false);
   const months = Array.from({ length: 12 }, (_, i) => {
     const date = new Date(selectedDate.getFullYear(), i, 1);
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const days = [];
+    const tempDate = new Date(date);
 
-    const monthTotal = days.reduce((total, day) => {
+    while (tempDate.getMonth() === i) {
+      days.push(new Date(tempDate));
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+
+    const total = days.reduce((sum, day) => {
       const dateStr = format(day, 'yyyy-MM-dd');
-      return total + (data[dateStr] || 0);
+      return sum + (data[dateStr] || 0);
     }, 0);
 
-    return {
-      date,
-      days,
-      total: monthTotal
-    };
+    return { date, days, total };
   });
 
-  const handleMonthClick = (index: number) => {
-    onDateSelect(months[index].date);
+  const handleMonthClick = (date: Date) => {
+    onDateSelect(date);
     onViewChange('month');
+  };
+
+  const handleDateClick = (date: Date) => {
+    onDateSelect(date);
+    // Only show mobile dialog on smaller screens
+    if (window.innerWidth < 1024) {
+      setShowMobileDialog(true);
+    }
   };
 
   return (
     <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-      {months.map((month, index) => (
+      {months.map((month) => (
         <div key={format(month.date, 'M')} className="space-y-3 sm:space-y-4">
           <button
             className="w-full flex justify-between items-baseline p-2 sm:p-3 rounded-xl hover:bg-gray-50"
-            onClick={() => handleMonthClick(index)}
+            onClick={() => handleMonthClick(month.date)}
           >
             <h3 className="text-lg sm:text-xl font-bold text-gray-700">{format(month.date, 'MMMM')}</h3>
             <div className="text-base sm:text-lg font-medium text-gray-600">
@@ -57,7 +68,7 @@ const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: Year
                 aria-label={day}
                 role="columnheader"
               >
-                {day[0]}
+                {window.innerWidth < 640 ? day[0] : day[0]}
               </div>
             ))}
 
@@ -76,19 +87,31 @@ const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: Year
                 <button
                   key={dateStr}
                   className="p-0.5"
-                  onClick={() => onDateSelect(day)}
+                  onClick={() => handleDateClick(day)}
                   title={`${format(day, 'MMM d')}: ${convertUnit(amount, 'mm', unit).toFixed(1)}${unit}`}
                 >
                   <div
-                    className="aspect-square rounded-lg transition-shadow hover:shadow-lg"
+                    className="aspect-square rounded-lg transition-shadow hover:shadow-lg relative"
                     style={{ backgroundColor: color }}
-                  ></div>
+                  >
+                    <span className="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-normal text-gray-600">
+                      {format(day, 'd')}
+                    </span>
+                  </div>
                 </button>
               );
             })}
           </div>
         </div>
       ))}
+
+      <MobileDataDialog
+        date={selectedDate}
+        data={data}
+        unit={unit}
+        isOpen={showMobileDialog}
+        onClose={() => setShowMobileDialog(false)}
+      />
     </div>
   );
 };
