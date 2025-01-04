@@ -3,59 +3,68 @@ import { format } from 'date-fns';
 import { convertUnit } from '../utils/units';
 
 interface DataPanelProps {
+  date: Date;
   data: { [key: string]: number };
-  selectedDate: Date;
   unit: string;
+  loading?: boolean;
 }
 
-const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate, unit }) => {
+const DataPanel: React.FC<DataPanelProps> = ({ data, date, unit, loading }) => {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Convert data object to array and sort by date
   const sortedData = Object.entries(data)
-    .map(([date, amount]) => ({ date, amount }))
+    .map(([dateStr, amount]) => ({ date: dateStr, amount }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const dateStr = format(date, 'yyyy-MM-dd');
   const amount = data[dateStr] || 0;
 
   return (
-    <div className="fixed right-4 top-24 w-80 bg-white shadow-lg rounded-lg p-4 overflow-auto max-h-[calc(100vh-120px)]">
-      <h2 className="text-lg font-medium mb-4">Raw Data</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 className="text-lg font-medium text-gray-900 mb-6">Rainfall Data</h2>
       
       {/* Current Selection */}
-      <div className="mb-4 p-3 bg-blue-50 rounded-md">
-        <h3 className="text-sm font-medium text-blue-900 mb-1">Selected Date</h3>
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+        <h3 className="text-sm font-medium text-blue-900 mb-2">Selected Date</h3>
         <p className="text-sm text-blue-800">
-          {format(selectedDate, 'MMMM d, yyyy')}
+          {format(date, 'MMMM d, yyyy')}
         </p>
-        <p className="text-sm text-blue-800 mt-1">
-          Rainfall: {convertUnit(amount, 'mm', unit).toFixed(2)}{unit}
+        <p className="text-sm text-blue-800 mt-2 font-medium">
+          Rainfall: {convertUnit(amount, 'mm', unit).toFixed(2)} {unit}
         </p>
       </div>
 
       {/* Data List */}
       <div className="space-y-1">
-        <div className="grid grid-cols-2 gap-2 text-sm font-medium text-gray-500 mb-2">
+        <div className="grid grid-cols-2 gap-4 text-sm font-medium text-gray-500 mb-3 px-1">
           <div>Date</div>
           <div>Rainfall ({unit})</div>
         </div>
-        {sortedData.map(({ date, amount }) => (
-          <div 
-            key={date}
-            className="grid grid-cols-2 gap-2 text-sm py-1 border-b border-gray-100"
-          >
-            <div>{format(new Date(date), 'MMM d')}</div>
-            <div>{convertUnit(amount, 'mm', unit).toFixed(2)}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Data Summary */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <h3 className="text-sm font-medium mb-2">Summary</h3>
-        <div className="text-sm text-gray-600">
-          <p>Total Records: {sortedData.length}</p>
-          <p>Total Rainfall: {sortedData.reduce((sum, { amount }) => sum + amount, 0).toFixed(2)}mm</p>
-          <p>Days with Rain: {sortedData.filter(({ amount }) => amount > 0).length}</p>
+        <div className="space-y-1 max-h-[400px] overflow-y-auto">
+          {sortedData.map(({ date: itemDate, amount }) => (
+            <div 
+              key={itemDate}
+              className={`grid grid-cols-2 gap-4 text-sm py-2 px-1 border-b border-gray-100 ${
+                itemDate === dateStr ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div>{format(new Date(itemDate), 'MMM d, yyyy')}</div>
+              <div>{convertUnit(amount, 'mm', unit).toFixed(2)}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

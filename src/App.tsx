@@ -73,6 +73,13 @@ function App() {
     }));
   };
 
+  const handleMonthChange = (delta: number) => {
+    setCalendarState(prev => ({
+      ...prev,
+      selectedDate: addMonths(prev.selectedDate, delta)
+    }));
+  };
+
   const handleDateSelect = (date: Date) => {
     setCalendarState(prev => ({
       ...prev,
@@ -95,73 +102,109 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-[1400px] mx-auto flex gap-4">
-        <main className="flex-1 min-w-0">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">
-                {calendarState.viewLevel === 'year' 
-                  ? calendarState.selectedDate.getFullYear()
-                  : format(calendarState.selectedDate, 'MMMM yyyy')}
-              </h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleYearChange(-1)}
-                  className="p-2 hover:bg-gray-50 rounded"
-                >
-                  ←
-                </button>
-                {calendarState.viewLevel === 'month' && (
-                  <button
-                    onClick={() => handleViewChange('year')}
-                    className="px-3 py-1 text-sm hover:bg-gray-50 rounded"
-                  >
-                    Year View
-                  </button>
+    <div className="min-h-screen w-full bg-gray-50">
+      {/* Header */}
+      <header className="w-full bg-white border-b border-gray-200">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-gray-900">Rainfall Calendar</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleUnitToggle}
+                className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700"
+              >
+                {calendarState.unit.toUpperCase()}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="w-full py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="w-full flex flex-col lg:flex-row gap-8">
+            {/* Calendar Section */}
+            <div className="w-full lg:flex-1 min-w-0">
+              <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                {/* View Controls */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => calendarState.viewLevel === 'year' ? handleYearChange(-1) : handleMonthChange(-1)}
+                      className="p-2 rounded-md hover:bg-gray-100"
+                    >
+                      ←
+                    </button>
+                    <h2 className="text-xl font-medium">
+                      {calendarState.viewLevel === 'year' 
+                        ? calendarState.selectedDate.getFullYear()
+                        : format(calendarState.selectedDate, 'MMMM yyyy')}
+                    </h2>
+                    <button
+                      onClick={() => calendarState.viewLevel === 'year' ? handleYearChange(1) : handleMonthChange(1)}
+                      className="p-2 rounded-md hover:bg-gray-100"
+                    >
+                      →
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleViewChange('year')}
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${
+                        calendarState.viewLevel === 'year'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      Year
+                    </button>
+                    <button
+                      onClick={() => handleViewChange('month')}
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${
+                        calendarState.viewLevel === 'month'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      Month
+                    </button>
+                  </div>
+                </div>
+
+                {/* Calendar View */}
+                {calendarState.viewLevel === 'year' ? (
+                  <YearView
+                    selectedDate={calendarState.selectedDate}
+                    onDateSelect={handleDateSelect}
+                    data={rainfallData}
+                    unit={calendarState.unit}
+                  />
+                ) : (
+                  <MonthView
+                    selectedDate={calendarState.selectedDate}
+                    onDateSelect={handleDateSelect}
+                    data={rainfallData}
+                    unit={calendarState.unit}
+                  />
                 )}
-                <button
-                  onClick={() => handleYearChange(1)}
-                  className="p-2 hover:bg-gray-50 rounded"
-                >
-                  →
-                </button>
-                <button
-                  onClick={handleUnitToggle}
-                  className="px-4 py-2 text-lg font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  {calendarState.unit.toUpperCase()}
-                </button>
               </div>
             </div>
 
-            {calendarState.viewLevel === 'year' ? (
-              <YearView
-                data={rainfallData}
-                selectedDate={calendarState.selectedDate}
-                unit={calendarState.unit}
-                onDateSelect={handleDateSelect}
-                onViewChange={handleViewChange}
-              />
-            ) : (
-              <MonthView
-                data={rainfallData}
-                selectedDate={calendarState.selectedDate}
-                unit={calendarState.unit}
-                onDateSelect={handleDateSelect}
-              />
-            )}
+            {/* Data Panel */}
+            <div className="w-full lg:w-96">
+              <div className="sticky top-8">
+                <DataPanel
+                  date={calendarState.selectedDate}
+                  data={rainfallData}
+                  unit={calendarState.unit}
+                  loading={loading}
+                />
+              </div>
+            </div>
           </div>
-        </main>
-
-        <aside className="w-80 border-l border-gridlines p-4">
-          <DataPanel
-            data={rainfallData}
-            selectedDate={calendarState.selectedDate}
-            unit={calendarState.unit}
-          />
-        </aside>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

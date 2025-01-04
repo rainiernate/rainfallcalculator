@@ -41,45 +41,21 @@ const Calendar = ({ viewLevel, selectedDate, unit, onDateSelect }: CalendarViewP
     setShowInfoPanel(true);
   };
 
-  const renderBreadcrumbs = () => {
-    const parts = [];
-    const year = selectedDate.getFullYear();
-    parts.push(year);
-
-    if (viewLevel !== 'year') {
-      parts.push(format(selectedDate, 'MMMM'));
-      
-      if (viewLevel === 'week' || viewLevel === 'day') {
-        parts.push(`Week ${format(selectedDate, 'w')}`);
-        
-        if (viewLevel === 'day') {
-          parts.push(format(selectedDate, 'd'));
-        }
-      }
-    }
-
-    return (
-      <div className="text-sm text-text/70 mb-4 px-4">
-        <span className="font-medium">Puyallup, WA</span> &gt; {parts.join(' → ')}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rainfall-medium mb-4"></div>
-        <div className="text-text/70">Loading rainfall data...</div>
+      <div className="flex flex-col items-center justify-center h-[500px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <div className="mt-4 text-sm text-gray-600">Loading rainfall data...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[600px]">
+      <div className="flex flex-col items-center justify-center h-[500px]">
         <div className="text-red-500 text-center max-w-md">
           <div className="text-xl mb-2">⚠️</div>
-          <div>{error}</div>
+          <div className="text-sm">{error}</div>
         </div>
       </div>
     );
@@ -87,28 +63,39 @@ const Calendar = ({ viewLevel, selectedDate, unit, onDateSelect }: CalendarViewP
 
   return (
     <div className="w-full">
-      {renderBreadcrumbs()}
-      {viewLevel === 'year' ? (
-        <YearView
-          data={rainfallData}
-          selectedDate={selectedDate}
-          unit={unit}
-          onDateSelect={handleDateSelect}
-        />
-      ) : viewLevel === 'month' && (
-        <MonthView
-          data={rainfallData}
-          selectedDate={selectedDate}
-          unit={unit}
-          onDateSelect={handleDateSelect}
-        />
-      )}
-      
-      {/* Info Panel */}
+      {/* Location and Navigation Breadcrumbs */}
+      <div className="flex items-center text-sm text-gray-600 mb-6">
+        <span className="font-medium text-gray-900">Puyallup, WA</span>
+        <span className="mx-2">→</span>
+        {format(selectedDate, viewLevel === 'year' ? 'yyyy' : 'MMMM yyyy')}
+      </div>
+
+      {/* Calendar Content */}
+      <div className="flex justify-center">
+        <div className="w-full">
+          {viewLevel === 'year' ? (
+            <YearView
+              data={rainfallData}
+              selectedDate={selectedDate}
+              unit={unit}
+              onDateSelect={handleDateSelect}
+            />
+          ) : (
+            <MonthView
+              data={rainfallData}
+              selectedDate={selectedDate}
+              unit={unit}
+              onDateSelect={handleDateSelect}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Info Panel (shown conditionally) */}
       {showInfoPanel && (
         <InfoPanel
-          selectedDate={selectedDate}
           data={rainfallData}
+          date={selectedDate}
           unit={unit}
           onClose={() => setShowInfoPanel(false)}
         />
