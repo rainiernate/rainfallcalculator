@@ -1,145 +1,158 @@
-import { useState } from 'react';
-import { CalendarState, ViewLevel } from './types';
-import Calendar from './components/Calendar';
-import { addYears, subYears, addMonths, subMonths } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { format, addMonths, subMonths } from 'date-fns';
+import { CalendarState } from './types';
+import DataPanel from './components/DataPanel';
+import { fetchRainfallData } from './services/noaaApi';
+import YearView from './components/Calendar/YearView';
+import MonthView from './components/Calendar/MonthView';
 
 function App() {
   const [calendarState, setCalendarState] = useState<CalendarState>({
+    selectedDate: new Date(2023, 0, 1), // Start with January 2023
     viewLevel: 'year',
-    selectedDate: new Date(2023, 0, 1), // Start with 2023 as it should have data
-    unit: 'mm',
-    year: 2023,
+    unit: 'mm'
   });
+
+  // Cache for storing fetched data
+  const [dataCache, setDataCache] = useState<{
+    [key: string]: {
+      data: { [key: string]: number };
+      timestamp: number;
+    };
+  }>({});
+
+  const [rainfallData, setRainfallData] = useState<{ [key: string]: number }>({});
+  const [loading, setLoading] = useState(false);
+
+  // Fetch data for the entire year
+  useEffect(() => {
+    const fetchYearData = async () => {
+      setLoading(true);
+      try {
+        // Fetch entire year 2023
+        const data = await fetchRainfallData('2023-01-01', '2023-12-31');
+        
+        // Convert array to object with date keys
+        const dataMap = data.reduce((acc, item) => {
+          acc[item.date] = item.amount;
+          return acc;
+        }, {} as {[key: string]: number});
+
+        setRainfallData(dataMap);
+
+        // Cache the data
+        setDataCache({
+          '2023': {
+            data: dataMap,
+            timestamp: Date.now()
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching rainfall data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Check if we have cached data
+    const cachedData = dataCache['2023'];
+    if (cachedData && (Date.now() - cachedData.timestamp) < 60 * 60 * 1000) {
+      setRainfallData(cachedData.data);
+    } else {
+      fetchYearData();
+    }
+  }, []); // Only fetch once for the entire year
+
+  const handleYearChange = (delta: number) => {
+    setCalendarState(prev => ({
+      ...prev,
+      selectedDate: new Date(prev.selectedDate.getFullYear() + delta, 0, 1)
+    }));
+  };
 
   const handleDateSelect = (date: Date) => {
     setCalendarState(prev => ({
       ...prev,
-      selectedDate: date,
+      selectedDate: date
     }));
   };
 
-  const handleYearChange = (delta: number) => {
-    const newDate = delta > 0 
-      ? addYears(calendarState.selectedDate, delta)
-      : subYears(calendarState.selectedDate, Math.abs(delta));
-    
+  const handleViewChange = (view: 'year' | 'month') => {
     setCalendarState(prev => ({
       ...prev,
-      selectedDate: newDate,
-      year: newDate.getFullYear(),
-    }));
-  };
-
-  const handleMonthChange = (delta: number) => {
-    const newDate = delta > 0
-      ? addMonths(calendarState.selectedDate, delta)
-      : subMonths(calendarState.selectedDate, Math.abs(delta));
-    
-    setCalendarState(prev => ({
-      ...prev,
-      selectedDate: newDate,
-      year: newDate.getFullYear(),
-    }));
-  };
-
-  const handleViewLevelChange = (level: ViewLevel) => {
-    setCalendarState(prev => ({
-      ...prev,
-      viewLevel: level,
+      viewLevel: view
     }));
   };
 
   const handleUnitToggle = () => {
     setCalendarState(prev => ({
       ...prev,
-      unit: prev.unit === 'mm' ? 'inches' : 'mm',
+      unit: prev.unit === 'mm' ? 'in' : 'mm'
     }));
   };
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <header className="py-4 px-6 border-b border-gridlines bg-white shadow-sm">
-        <div className="max-w-[1400px] mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Rainfall Calendar</h1>
-          <div className="flex items-center space-x-6">
-            {/* Date Navigation */}
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => calendarState.viewLevel === 'year' 
-                  ? handleYearChange(-1) 
-                  : handleMonthChange(-1)
-                }
-                className="p-2 rounded-md hover:bg-gridlines transition-colors"
-                aria-label={calendarState.viewLevel === 'year' ? "Previous Year" : "Previous Month"}
-              >
-                ←
-              </button>
-              <span className="text-lg font-medium min-w-[120px] text-center">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-[1400px] mx-auto flex gap-4">
+        <main className="flex-1 min-w-0">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-2xl font-bold">
                 {calendarState.viewLevel === 'year' 
                   ? calendarState.selectedDate.getFullYear()
-                  : new Intl.DateTimeFormat('en-US', { 
-                      month: 'long',
-                      year: 'numeric'
-                    }).format(calendarState.selectedDate)
-                }
-              </span>
-              <button
-                onClick={() => calendarState.viewLevel === 'year'
-                  ? handleYearChange(1)
-                  : handleMonthChange(1)
-                }
-                className="p-2 rounded-md hover:bg-gridlines transition-colors"
-                aria-label={calendarState.viewLevel === 'year' ? "Next Year" : "Next Month"}
-              >
-                →
-              </button>
+                  : format(calendarState.selectedDate, 'MMMM yyyy')}
+              </h1>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleYearChange(-1)}
+                  className="p-2 hover:bg-gray-50 rounded"
+                >
+                  ←
+                </button>
+                {calendarState.viewLevel === 'month' && (
+                  <button
+                    onClick={() => handleViewChange('year')}
+                    className="px-3 py-1 text-sm hover:bg-gray-50 rounded"
+                  >
+                    Year View
+                  </button>
+                )}
+                <button
+                  onClick={() => handleYearChange(1)}
+                  className="p-2 hover:bg-gray-50 rounded"
+                >
+                  →
+                </button>
+              </div>
             </div>
 
-            {/* View Controls */}
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleViewLevelChange('year')}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  calendarState.viewLevel === 'year'
-                    ? 'bg-rainfall-medium text-white'
-                    : 'bg-gridlines hover:bg-gridlines/80'
-                }`}
-              >
-                Year
-              </button>
-              <button
-                onClick={() => handleViewLevelChange('month')}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  calendarState.viewLevel === 'month'
-                    ? 'bg-rainfall-medium text-white'
-                    : 'bg-gridlines hover:bg-gridlines/80'
-                }`}
-              >
-                Month
-              </button>
-            </div>
-
-            {/* Unit Toggle */}
-            <button
-              onClick={handleUnitToggle}
-              className="px-4 py-2 rounded-md bg-gridlines hover:bg-gridlines/80 transition-colors"
-            >
-              {calendarState.unit.toUpperCase()}
-            </button>
+            {calendarState.viewLevel === 'year' ? (
+              <YearView
+                data={rainfallData}
+                selectedDate={calendarState.selectedDate}
+                unit={calendarState.unit}
+                onDateSelect={handleDateSelect}
+                onViewChange={handleViewChange}
+              />
+            ) : (
+              <MonthView
+                data={rainfallData}
+                selectedDate={calendarState.selectedDate}
+                unit={calendarState.unit}
+                onDateSelect={handleDateSelect}
+              />
+            )}
           </div>
-        </div>
-      </header>
-      <main className="max-w-[1400px] mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm">
-          <Calendar
-            data={[]} // This will be populated by the Calendar component
-            viewLevel={calendarState.viewLevel}
+        </main>
+
+        <aside className="w-80 border-l border-gridlines p-4">
+          <DataPanel
+            data={rainfallData}
             selectedDate={calendarState.selectedDate}
             unit={calendarState.unit}
-            onDateSelect={handleDateSelect}
           />
-        </div>
-      </main>
+        </aside>
+      </div>
     </div>
   );
 }

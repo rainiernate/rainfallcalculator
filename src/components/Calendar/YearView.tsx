@@ -1,116 +1,88 @@
-import { useMemo } from 'react';
-import { addDays, startOfYear, format, isSameDay, startOfMonth, endOfMonth, getDay } from 'date-fns';
-import { RainfallData } from '../../types';
-import { calculateColor, formatRainfall } from '../../utils/colorScale';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { getColorForAmount } from '../../utils/colors';
+import { convertUnit } from '../../utils/units';
 
 interface YearViewProps {
-  data: RainfallData[];
+  data: { [key: string]: number };
   selectedDate: Date;
-  unit: 'mm' | 'inches';
+  unit: string;
   onDateSelect: (date: Date) => void;
+  onViewChange: (view: 'year' | 'month') => void;
 }
 
-const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: YearViewProps) => {
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date(selectedDate.getFullYear(), i, 1);
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfMonth(date);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-const YearView = ({ data, selectedDate, unit, onDateSelect }: YearViewProps) => {
-  const yearData = useMemo(() => {
-    const year = selectedDate.getFullYear();
-    const startDate = startOfYear(new Date(year, 0, 1));
-    const days = [];
-    const dataMap = new Map(data.map(d => [d.date.split('T')[0], d.amount]));
+    const monthTotal = days.reduce((total, day) => {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      return total + (data[dateStr] || 0);
+    }, 0);
 
-    for (let i = 0; i < 365 + (year % 4 === 0 ? 1 : 0); i++) {
-      const date = addDays(startDate, i);
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const rainfall = dataMap.get(dateStr) || 0;
-
-      days.push({
-        date,
-        rainfall,
-        color: calculateColor(rainfall),
-        monthIndex: date.getMonth(),
-        dayOfMonth: date.getDate(),
-      });
-    }
-
-    return days;
-  }, [data, selectedDate]);
-
-  const months = useMemo(() => {
-    const year = selectedDate.getFullYear();
-    return Array.from({ length: 12 }, (_, monthIndex) => {
-      const monthStart = startOfMonth(new Date(year, monthIndex, 1));
-      const monthEnd = endOfMonth(monthStart);
-      const startDayOfWeek = getDay(monthStart);
-      
-      // Create array for all days in the month grid
-      const daysGrid = [];
-      
-      // Add empty cells for days before the start of the month
-      for (let i = 0; i < startDayOfWeek; i++) {
-        daysGrid.push(null);
-      }
-      
-      // Add the actual days of the month
-      const monthDays = yearData.filter(day => day.monthIndex === monthIndex);
-      daysGrid.push(...monthDays);
-      
-      // Add empty cells to complete the grid if needed
-      while (daysGrid.length < 42) { // 6 rows * 7 days
-        daysGrid.push(null);
-      }
-
-      return {
-        name: format(monthStart, 'MMM'),
-        days: daysGrid,
-      };
-    });
-  }, [yearData, selectedDate]);
+    return {
+      date,
+      days,
+      total: monthTotal
+    };
+  });
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="min-w-[1200px] p-4">
-        <div className="grid grid-cols-4 gap-6">
-          {months.map((month, monthIndex) => (
-            <div key={monthIndex} className="bg-white rounded-lg p-2 shadow-sm">
-              <div className="text-center text-sm font-medium mb-2 text-text/70">
-                {month.name}
-              </div>
+    <div className="container mx-auto px-4 flex flex-col items-center">
+      <div className="w-full max-w-[1400px]">
+        <div className="grid grid-cols-4 gap-10">
+          {months.map(({ date, days, total }) => (
+            <div key={format(date, 'M')} className="space-y-5">
+              <button 
+                onClick={() => {
+                  onDateSelect(date);
+                  onViewChange('month');
+                }}
+                className="w-full flex justify-between items-baseline p-3 rounded-xl hover:bg-gray-50"
+              >
+                <h3 className="text-2xl font-bold text-gray-700">
+                  {format(date, 'MMMM')}
+                </h3>
+                <div className="text-xl font-medium text-gray-600">
+                  {convertUnit(total, 'mm', unit).toFixed(1)}{unit}
+                </div>
+              </button>
               
-              {/* Days of week headers */}
-              <div className="grid grid-cols-7 gap-1 mb-1">
-                {DAYS_OF_WEEK.map(day => (
-                  <div key={day} className="text-center text-xs font-medium text-text/50">
+              <div className="grid grid-cols-7 gap-2">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                  <div
+                    key={day}
+                    className="text-center text-base font-medium text-gray-500"
+                  >
                     {day}
                   </div>
                 ))}
-              </div>
-              
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {month.days.map((day, index) => (
-                  <div
-                    key={index}
-                    className={`
-                      aspect-square rounded-sm
-                      ${!day ? 'bg-transparent' : `
-                        cursor-pointer
-                        hover:ring-2 hover:ring-text/20 
-                        transition-all
-                        flex items-center justify-center text-xs
-                        ${day.color === 'rainfall-none' ? 'bg-rainfall-none' : 
-                          day.color === 'rainfall-light' ? 'bg-rainfall-light' :
-                          day.color === 'rainfall-medium' ? 'bg-rainfall-medium' :
-                          'bg-rainfall-heavy'}
-                        ${isSameDay(day.date, selectedDate) ? 'ring-2 ring-text' : ''}
-                      `}
-                    `}
-                    onClick={() => day && onDateSelect(day.date)}
-                    title={day ? `${format(day.date, 'MMM d, yyyy')}: ${formatRainfall(day.rainfall, unit)}` : ''}
-                  >
-                    {day?.dayOfMonth}
-                  </div>
+
+                {Array.from({ length: days[0].getDay() }).map((_, i) => (
+                  <div key={`empty-${i}`} />
                 ))}
+
+                {days.map(day => {
+                  const dateStr = format(day, 'yyyy-MM-dd');
+                  const amount = data[dateStr] || 0;
+                  const color = getColorForAmount(amount);
+
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => onDateSelect(day)}
+                      className="p-0.5"
+                      title={`${format(day, 'MMM d')}: ${convertUnit(amount, 'mm', unit).toFixed(1)}${unit}`}
+                    >
+                      <div 
+                        className="aspect-square rounded-lg transition-shadow hover:shadow-lg"
+                        style={{ backgroundColor: color }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
