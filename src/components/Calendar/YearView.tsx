@@ -50,14 +50,14 @@ const YearView = ({ data, selectedDate, unit, onDateSelect, onViewChange }: Year
 
           <div className="grid grid-cols-7 gap-1.5">
             {/* Day headers */}
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div
                 key={day}
                 className="text-center text-sm font-medium text-gray-500"
                 aria-label={day}
                 role="columnheader"
               >
-                {day}
+                {day[0]}
               </div>
             ))}
 
