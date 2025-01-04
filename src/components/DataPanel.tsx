@@ -1,16 +1,21 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { convertUnit } from '../utils/units';
 
 interface DataPanelProps {
   data: { [key: string]: number };
   selectedDate: Date;
+  unit: string;
 }
 
-const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate }) => {
+const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate, unit }) => {
   // Convert data object to array and sort by date
   const sortedData = Object.entries(data)
     .map(([date, amount]) => ({ date, amount }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const amount = data[dateStr] || 0;
 
   return (
     <div className="fixed right-4 top-24 w-80 bg-white shadow-lg rounded-lg p-4 overflow-auto max-h-[calc(100vh-120px)]">
@@ -23,7 +28,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate }) => {
           {format(selectedDate, 'MMMM d, yyyy')}
         </p>
         <p className="text-sm text-blue-800 mt-1">
-          Rainfall: {data[format(selectedDate, 'yyyy-MM-dd')] || 0}mm
+          Rainfall: {convertUnit(amount, 'mm', unit).toFixed(2)}{unit}
         </p>
       </div>
 
@@ -31,7 +36,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate }) => {
       <div className="space-y-1">
         <div className="grid grid-cols-2 gap-2 text-sm font-medium text-gray-500 mb-2">
           <div>Date</div>
-          <div>Rainfall (mm)</div>
+          <div>Rainfall ({unit})</div>
         </div>
         {sortedData.map(({ date, amount }) => (
           <div 
@@ -39,7 +44,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, selectedDate }) => {
             className="grid grid-cols-2 gap-2 text-sm py-1 border-b border-gray-100"
           >
             <div>{format(new Date(date), 'MMM d')}</div>
-            <div>{amount.toFixed(2)}</div>
+            <div>{convertUnit(amount, 'mm', unit).toFixed(2)}</div>
           </div>
         ))}
       </div>

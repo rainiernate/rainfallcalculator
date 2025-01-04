@@ -8,9 +8,9 @@ import MonthView from './components/Calendar/MonthView';
 
 function App() {
   const [calendarState, setCalendarState] = useState<CalendarState>({
-    selectedDate: new Date(2023, 0, 1), // Start with January 2023
+    selectedDate: new Date(2024, 0, 1), // Start with January 2024
     viewLevel: 'year',
-    unit: 'mm'
+    unit: 'in'
   });
 
   // Cache for storing fetched data
@@ -24,13 +24,14 @@ function App() {
   const [rainfallData, setRainfallData] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(false);
 
-  // Fetch data for the entire year
+  // Fetch data for the selected year
   useEffect(() => {
     const fetchYearData = async () => {
+      const year = calendarState.selectedDate.getFullYear();
       setLoading(true);
       try {
-        // Fetch entire year 2023
-        const data = await fetchRainfallData('2023-01-01', '2023-12-31');
+        // Fetch data for the selected year
+        const data = await fetchRainfallData(`${year}-01-01`, `${year}-12-31`);
         
         // Convert array to object with date keys
         const dataMap = data.reduce((acc, item) => {
@@ -41,12 +42,13 @@ function App() {
         setRainfallData(dataMap);
 
         // Cache the data
-        setDataCache({
-          '2023': {
+        setDataCache(prev => ({
+          ...prev,
+          [year]: {
             data: dataMap,
             timestamp: Date.now()
           }
-        });
+        }));
       } catch (error) {
         console.error('Error fetching rainfall data:', error);
       } finally {
@@ -54,14 +56,15 @@ function App() {
       }
     };
 
-    // Check if we have cached data
-    const cachedData = dataCache['2023'];
+    // Check if we have cached data for the selected year
+    const year = calendarState.selectedDate.getFullYear();
+    const cachedData = dataCache[year];
     if (cachedData && (Date.now() - cachedData.timestamp) < 60 * 60 * 1000) {
       setRainfallData(cachedData.data);
     } else {
       fetchYearData();
     }
-  }, []); // Only fetch once for the entire year
+  }, [calendarState.selectedDate.getFullYear()]); // Fetch when year changes
 
   const handleYearChange = (delta: number) => {
     setCalendarState(prev => ({
@@ -122,6 +125,12 @@ function App() {
                   className="p-2 hover:bg-gray-50 rounded"
                 >
                   →
+                </button>
+                <button
+                  onClick={handleUnitToggle}
+                  className="px-4 py-2 text-lg font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  {calendarState.unit.toUpperCase()}
                 </button>
               </div>
             </div>

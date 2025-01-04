@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { RainfallData } from '../types';
-import { subYears, format } from 'date-fns';
+import { addDays, subDays, parseISO, format, startOfDay } from 'date-fns';
 
 const API_BASE_URL = 'https://www.ncei.noaa.gov/access/services/data/v1';
-const BOSTON_STATION = 'USW00014739'; // Boston Logan Airport
+const BOSTON_STATION = 'USW00094274'; // Tacoma Seatac Airport
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -250,12 +250,16 @@ export const fetchRainfallData = async (
   endDate: string
 ): Promise<RainfallData[]> => {
   try {
+    // Adjust the request dates to account for the offset
+    const adjustedStartDate = format(subDays(parseISO(startDate), 1), 'yyyy-MM-dd');
+    const adjustedEndDate = format(subDays(parseISO(endDate), 1), 'yyyy-MM-dd');
+
     const response = await api.get('', {
       params: {
         dataset: 'daily-summaries',
         stations: BOSTON_STATION,
-        startDate,
-        endDate,
+        startDate: adjustedStartDate,
+        endDate: adjustedEndDate,
         dataTypes: 'TMAX,TMIN,PRCP',
         format: 'json',
         includeStationName: true,
@@ -268,15 +272,21 @@ export const fetchRainfallData = async (
       return [];
     }
 
-    return response.data.map(record => ({
-      date: record.DATE,
-      amount: record.PRCP ? parseFloat(record.PRCP) / 10 : 0, // Convert from tenths of mm to mm
-      temperature: {
-        max: record.TMAX ? parseFloat(record.TMAX) / 10 : undefined, // Convert from tenths of °C to °C
-        min: record.TMIN ? parseFloat(record.TMIN) / 10 : undefined
-      },
-      quality: 'standard'
-    }));
+    return response.data.map(record => {
+      // Parse the date and shift it forward by one day
+      const date = parseISO(record.DATE);
+      const adjustedDate = addDays(date, 1);
+      
+      return {
+        date: format(adjustedDate, 'yyyy-MM-dd'),
+        amount: record.PRCP ? parseFloat(record.PRCP) / 10 : 0, // Convert from tenths of mm to mm
+        temperature: {
+          max: record.TMAX ? parseFloat(record.TMAX) / 10 : undefined, // Convert from tenths of °C to °C
+          min: record.TMIN ? parseFloat(record.TMIN) / 10 : undefined
+        },
+        quality: 'standard'
+      };
+    });
   } catch (error) {
     console.error('Error fetching rainfall data:', error);
     return [];
